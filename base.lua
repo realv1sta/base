@@ -1,5 +1,5 @@
 #!/usr/bin/env lua
-local curses = require("curses")
+local curses = require("lcurses")
 
 local filename = arg[1] or "untitled.txt"
 local lines = {""}
