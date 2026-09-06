@@ -32,7 +32,7 @@ local function render()
     stdscr:mvaddstr(height - 2, 0, string.format("%-" .. width .. "s", status))
     stdscr:attroff(curses.A_REVERSE)
 
-    local cmd_bar = " Interface Shell Mode | Waiting for Rust Command Engine "
+    local cmd_bar = " Interface: Termianl | Waiting for Commands.. "
     stdscr:mvaddstr(height - 1, 0, string.format("%-" .. width .. "s", cmd_bar))
 
     stdscr:move(math.min(cy, text_height) - 1, math.min(cx, width) - 1)
