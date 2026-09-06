@@ -24,4 +24,8 @@ add("clear", "Clear the buffer", function()
     return "clear", "Buffer cleared"
 end)
 
+add("f", "Find a specific word", function()
+    return "Results:", "Here are the results."
+end)
+
 return commands
