@@ -1,5 +1,4 @@
 #!/usr/bin/env lua
-
 local curses = require("curses")
 
 local filename = arg[1] or "untitled.txt"
@@ -16,24 +15,24 @@ stdscr:keypad(true)
 stdscr:nodelay(true)
 
 local function render()
-  stdscr:erase()
-  local height, width  = stdscr:getmaxyx()
-  local text_height = height - 2
+    stdscr:erase()
+    local height, width = stdscr:getmaxyx()
+    local text_height = height - 2
 
-  for row = 1, text_height do
-    if row <= #lines then
-      stdscr:mvaddstr(row - 1, 0, string.sub(lines[row], 1, width))
+    for row = 1, text_height do
+        if row <= #lines then
+            stdscr:mvaddstr(row - 1, 0, string.sub(lines[row], 1, width))
+        end
     end
-  end
 
-local status = string.format(" Base | %s | MODE: %s | Line: %d/%d Col: %d | %s ", 
+    local status = string.format(" Base | %s | MODE: %s | Line: %d/%d Col: %d | %s ", 
         filename, mode, cy, #lines, cx, status_message)
     
     stdscr:attron(curses.A_REVERSE)
     stdscr:mvaddstr(height - 2, 0, string.format("%-" .. width .. "s", status))
     stdscr:attroff(curses.A_REVERSE)
 
-    local cmd_bar = " Interface: Terminal | Waiting for Commands.. "
+    local cmd_bar = " Interface Shell Mode | Waiting for Rust Command Engine "
     stdscr:mvaddstr(height - 1, 0, string.format("%-" .. width .. "s", cmd_bar))
 
     stdscr:move(math.min(cy, text_height) - 1, math.min(cx, width) - 1)
