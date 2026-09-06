@@ -51,7 +51,3 @@ Lua itself does **not** need to be installed separately — it's compiled and bu
 ## Contributing
 
 Contributions, issues, and feature requests are welcome. Feel free to check the [issues page](https://github.com/realv1sta/base/issues) if you'd like to help out.
-
-## License
-
-No license specified yet.
