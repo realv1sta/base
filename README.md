@@ -1,5 +1,8 @@
 # Base | Text Editor
 
+<img width="600" height="600" alt="image" src="https://github.com/user-attachments/assets/50a45d36-41c0-4296-bb84-eeca03afa788" />
+
+
 ## Introduction
 
 **Base** is a lightweight, terminal-based text editor built from scratch. It's designed to be fast, minimal, and configurable through Lua scripting, letting you customize commands and behavior to fit your workflow.
