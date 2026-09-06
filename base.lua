@@ -7,7 +7,7 @@ local cy, cx = 1, 1
 local mode = "NORMAL"
 local status_message = "Ready"
 
-local stdscr = curses.init()
+local stdscr = curses.initscr()
 curses.echo(false)
 curses.raw(true)
 curses.curs_set(1)
@@ -58,4 +58,4 @@ while running do
     end
 end
 
-curses.done()
+curses.endwin()
