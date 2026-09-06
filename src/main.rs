@@ -5,8 +5,11 @@ use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::queue;
 use crossterm::style::{Color, Print, SetBackgroundColor, SetForegroundColor};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen};
+use mlua::Lua;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+
+const COMMANDS_LUA: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/commands.lua");
 
 enum Mode {
     Normal,
@@ -127,15 +130,29 @@ fn main() -> Result<()> {
     queue!(stdout, EnterAlternateScreen, Hide)?;
     stdout.flush()?;
 
+    let lua = Lua::new();
+    let source = std::fs::read_to_string(COMMANDS_LUA)?;
+    let commands: mlua::Table = lua.load(&source).set_name("commands.lua").eval()?;
+
     let mut buffer = Buffer::new(filename);
     let mut mode = Mode::Normal;
+    let mut cmd_input = String::new();
+    let mut feedback: Option<String> = None;
     let mut running = true;
 
     let run = (|| {
         while running {
-            render(&mut stdout, &buffer, &mode)?;
+            render(&mut stdout, &buffer, &mode, &cmd_input, feedback.as_deref())?;
             if let Event::Key(key) = event::read()? {
-                handle_key(key, &mut buffer, &mut mode, &mut running)?;
+                handle_key(
+                    key,
+                    &commands,
+                    &mut buffer,
+                    &mut mode,
+                    &mut cmd_input,
+                    &mut feedback,
+                    &mut running,
+                )?;
             }
         }
         Ok(())
@@ -147,10 +164,43 @@ fn main() -> Result<()> {
     run
 }
 
+fn execute_command(
+    commands: &mlua::Table,
+    name: &str,
+    buffer: &mut Buffer,
+    running: &mut bool,
+) -> Result<String> {
+    if !commands.contains_key(name)? {
+        return Ok(format!("Command not found: {}", name));
+    }
+    let command: mlua::Table = commands.get(name)?;
+    let run: mlua::Function = command.get("run")?;
+    let (action, message): (String, String) = run.call(())?;
+    match action.as_str() {
+        "save" => buffer.save()?,
+        "save_and_exit" => {
+            buffer.save()?;
+            *running = false;
+        }
+        "exit" => *running = false,
+        "discard" => *running = false,
+        "clear" => {
+            buffer.lines = vec![String::new()];
+            buffer.cy = 0;
+            buffer.cx = 0;
+        }
+        other => return Ok(format!("Unknown action from Lua: {}", other)),
+    }
+    Ok(message)
+}
+
 fn handle_key(
     key: KeyEvent,
+    commands: &mlua::Table,
     buffer: &mut Buffer,
     mode: &mut Mode,
+    cmd_input: &mut String,
+    feedback: &mut Option<String>,
     running: &mut bool,
 ) -> Result<()> {
     match mode {
@@ -162,16 +212,25 @@ fn handle_key(
             KeyCode::Char('j') => buffer.move_cursor_down(),
             KeyCode::Char('k') => buffer.move_cursor_up(),
             KeyCode::Char('l') => buffer.move_cursor_right(),
-            KeyCode::Char('i') => *mode = Mode::Insert,
+            KeyCode::Char('i') => {
+                *mode = Mode::Insert;
+                *feedback = None;
+            }
             KeyCode::Char('a') => {
                 buffer.move_cursor_right();
                 *mode = Mode::Insert;
+                *feedback = None;
             }
             KeyCode::Char('A') => {
                 buffer.cx = buffer.current_line().chars().count();
                 *mode = Mode::Insert;
+                *feedback = None;
             }
-            KeyCode::Char(':') => *mode = Mode::Command,
+            KeyCode::Char(':') => {
+                *mode = Mode::Command;
+                cmd_input.clear();
+                *feedback = None;
+            }
             KeyCode::Char('x') => {
                 let line = &mut buffer.lines[buffer.cy];
                 if buffer.cx < line.chars().count() {
@@ -179,15 +238,6 @@ fn handle_key(
                     bytes.remove(buffer.cx);
                     *line = bytes.into_iter().collect();
                 }
-            }
-            KeyCode::Char('w') => {
-                let mut out = String::new();
-                out.push_str(&format!(
-                    "{{\"event\": \"key\", \"mode\": \"NORMAL\", \"cy\": {}, \"cx\": {}}}",
-                    buffer.cy + 1,
-                    buffer.cx + 1
-                ));
-                println!("{}", out);
             }
             _ => {}
         },
@@ -199,9 +249,25 @@ fn handle_key(
             _ => {}
         },
         Mode::Command => match key.code {
-            KeyCode::Esc => *mode = Mode::Normal,
-            KeyCode::Enter => {
+            KeyCode::Esc => {
                 *mode = Mode::Normal;
+                cmd_input.clear();
+                *feedback = None;
+            }
+            KeyCode::Enter => {
+                let input = cmd_input.trim().to_string();
+                if input.is_empty() {
+                    *mode = Mode::Normal;
+                    *feedback = None;
+                } else {
+                    *feedback = Some(execute_command(commands, &input, buffer, running)?);
+                    *mode = Mode::Normal;
+                    cmd_input.clear();
+                }
+            }
+            KeyCode::Char(c) => cmd_input.push(c),
+            KeyCode::Backspace => {
+                cmd_input.pop();
             }
             _ => {}
         },
@@ -209,7 +275,13 @@ fn handle_key(
     Ok(())
 }
 
-fn render(stdout: &mut io::Stdout, buffer: &Buffer, mode: &Mode) -> Result<()> {
+fn render(
+    stdout: &mut io::Stdout,
+    buffer: &Buffer,
+    mode: &Mode,
+    cmd_input: &str,
+    feedback: Option<&str>,
+) -> Result<()> {
     queue!(stdout, Clear(ClearType::All))?;
 
     let (width, height) = crossterm::terminal::size()?;
@@ -220,7 +292,7 @@ fn render(stdout: &mut io::Stdout, buffer: &Buffer, mode: &Mode) -> Result<()> {
         Mode::Command => "COMMAND",
     };
 
-    let status_text = format!(
+    let mut status_text = format!(
         " Base | {} | MODE: {} | Line: {}/{} Col: {} ",
         buffer.filename,
         status,
@@ -228,6 +300,14 @@ fn render(stdout: &mut io::Stdout, buffer: &Buffer, mode: &Mode) -> Result<()> {
         buffer.lines.len(),
         buffer.cx + 1
     );
+
+    if let Some(fb) = feedback {
+        status_text.push_str(&format!("| {}", fb));
+    }
+
+    if let Mode::Command = mode {
+        status_text.push_str(&format!("| :{}", cmd_input));
+    }
 
     queue!(
         stdout,

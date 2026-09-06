@@ -1,0 +1,5 @@
+cargo:rerun-if-changed=build
+cargo:rustc-link-search=native=/home/gst/base/target/debug/build/mlua-sys-0d0ba9d30cf8f880/out/lua-build/lib
+cargo:rustc-link-lib=static=lua5.4
+cargo:include=/home/gst/base/target/debug/build/mlua-sys-0d0ba9d30cf8f880/out/lua-build/include
+cargo:lib=/home/gst/base/target/debug/build/mlua-sys-0d0ba9d30cf8f880/out/lua-build/lib
