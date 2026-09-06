@@ -1,4 +1,4 @@
-# Base | Text Editor <img width="200" height="200" alt="image" src="https://github.com/user-attachments/assets/50a45d36-41c0-4296-bb84-eeca03afa788"/>
+# Base | Text Editor <img width="50" height="50" alt="image" src="https://github.com/user-attachments/assets/50a45d36-41c0-4296-bb84-eeca03afa788"/>
 
 
 ## Introduction
