@@ -314,7 +314,7 @@ fn render(
         SetBackgroundColor(Color::White),
         SetForegroundColor(Color::Black),
         MoveTo(0, 0),
-        Print(format!("{:<width$}", status_text, width = width as usize)),
+        Print(format!("{:^width$}", status_text, width = width as usize)),
         SetBackgroundColor(Color::Reset),
         SetForegroundColor(Color::Reset),
     )?;
