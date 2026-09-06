@@ -32,22 +32,20 @@ Lua itself does **not** need to be installed separately — it's compiled and bu
    cd base
    ```
 
-2. Build the project:
+2. Build It:
    ```bash
-   cargo build --release
+   make install
    ```
 
-3. Run the editor:
+3. How To Make A Text File Using Base:
    ```bash
-   cargo run --release
+   bs [your desired file name]
    ```
 
-   Or, once built, run the compiled binary directly:
+   And You Are All Set!:
    ```bash
-   ./target/release/base
+   bs iamcool.txt
    ```
-
-4. (Optional) Customize your commands and keybindings by editing `commands.lua`.
 
 ## Contributing
 
