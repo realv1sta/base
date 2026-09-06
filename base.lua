@@ -20,7 +20,7 @@ local function render()
   local height, width  = stdscr:getmaxyx()
   local text_height = height - 2
 
-  for row = 1, text_height=do
+  for row = 1, text_height do
     if row <= #lines then
       stdscr:mvaddstr(row - 1, 0, string.sub(lines[row], 1 width))
     end
