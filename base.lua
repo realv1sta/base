@@ -22,7 +22,7 @@ local function render()
 
   for row = 1, text_height do
     if row <= #lines then
-      stdscr:mvaddstr(row - 1, 0, string.sub(lines[row], 1 width))
+      stdscr:mvaddstr(row - 1, 0, string.sub(lines[row], 1, width))
     end
   end
 
